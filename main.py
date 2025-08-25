@@ -1,37 +1,28 @@
 from fastapi import FastAPI, File, UploadFile
+from ultralytics import YOLO
 from PIL import Image
 import io
-import torch
-from ultralytics import YOLO
 
 app = FastAPI()
-
-model_name = "yolov8n.pt"
-model = YOLO(model_name)
+model = YOLO("yolo11n.pt")
 
 @app.get("/")
 async def home():
-    return f"yolo-api running with {model_name}"
+    return "yolov11-api running"
 
 @app.post("/detect")
 async def detect_objects(file: UploadFile = File(...)):
-    image = Image.open(io.BytesIO(await file.read()))
-    results = model(image)
+    img_bytes = await file.read()
+    image = Image.open(io.BytesIO(img_bytes))
+
+    results = model.predict(source=image)
 
     objects = []
-    for r in results:
-        for box, cls, score in zip(r.boxes.xyxy, r.boxes.cls, r.boxes.conf):
-            objects.append({
-                "label": model.names[int(cls)],
-                "score": float(score),
-                "box": [float(x) for x in box]
-            })
+    for r in results[0].boxes.data.tolist():
+        objects.append({
+            "box": r[:4],
+            "score": r[4],
+            "class": int(r[5])
+        })
 
-    response = {
-        "model_name": model_name,
-        "objects_num": len(objects),
-        "objects": objects
-    }
-
-    return response
-
+    return {"objects_num": len(objects), "objects": objects}
