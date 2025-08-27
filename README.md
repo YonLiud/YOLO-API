@@ -11,6 +11,6 @@ Send an image via POST `/detect` to get JSON with detected objects, bounding box
 
 ## Example of usage
 ```bash
-docker run -p 8000:8000 yonliud/yolo-api:latest
+docker run -d -p 8000:8000 yonliud/yolo-api:latest
 curl -X POST -F "file=@example.jpg" http://localhost:8000/detect
 ```
